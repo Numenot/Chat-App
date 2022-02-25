@@ -7,7 +7,6 @@ import firebase from 'firebase/compat/app';
 import 'firebase/compat/auth';
 import 'firebase/compat/firestore';
 
-
 export default class Chat extends React.Component {
   constructor() {
     super();
@@ -18,9 +17,10 @@ export default class Chat extends React.Component {
         _id: '',
         name: '',
         avatar: ''
-      },
-    }
+      }
+    };
 
+    //initialize firebase
     if (!firebase.apps.length) {
       firebase.initializeApp({
         apiKey: "AIzaSyBora1Vj-90jtf6co3vGUg53lcqP-yVe_s",
@@ -32,7 +32,44 @@ export default class Chat extends React.Component {
         measurementId: "G-G84GGTLCBT"
       });
     }
+
+    //reference to the messages collection in Firestore database
     this.referenceChatMessages = firebase.firestore().collection('messages');
+  }
+
+  componentDidMount() {
+    // use name defined in Start page
+    const { name } = this.props.route.params
+    this.props.navigation.setOptions({ title: name })
+
+    //listener for collection update
+    this.unsubscribe = this.referenceChatMessages
+      .orderBy('createdAt', 'desc')
+      .onSnapshot(this.onCollectionUpdate);
+
+    //authentication
+    this.authUnsubscribe = firebase.auth().onAuthStateChanged(async (user) => {
+      if (!user) {
+        await firebase.auth().signInAnonymously();
+      }
+
+      //update user state
+      this.setState({
+        uid: user.uid,
+        messages: [],
+        user: {
+          _id: user.uid,
+          name: name,
+          avatar: "https://placeimg.com/140/140/any"
+        },
+      });
+
+      this.referenceMessagesUser = firebase
+        .firestore()
+        .collection("messages")
+        .where("uid", "==", this.state.uid);
+
+    });
   }
 
   onCollectionUpdate = (querySnapshot) => {
@@ -45,54 +82,42 @@ export default class Chat extends React.Component {
         _id: data._id,
         text: data.text,
         createdAt: data.createdAt.toDate(),
-        user: data.user,
+        user: {
+          _id: data.user._id,
+          name: data.user.name,
+          avatar: data.user.avatar
+        }
       });
     });
     this.setState({
       messages: messages
     });
-  }
-
-  componentDidMount() {
-    // use name defined in Start page
-    const { name } = this.props.route.params
-    this.props.navigation.setOptions({ title: name })
-
-    this.unsubscribe = this.referenceChatMessages
-      .orderBy("createdAt", "desc")
-      .onSnapshot(this.onCollectionUpdate);
-
-    this.authUnsubscribe = firebase.auth().onAuthStateChanged((user) => {
-      if (!user) {
-        firebase.auth().signInAnonymously();
-      }
-      this.setState({
-        uid: user.uid,
-        messages: [],
-      });
-
-      this.referenceMessageUser = firebase.firestore().collection('messages').where("uid", "==", this.state.uid);
-    });
-  }
+  };
 
   // add new message to database
-  addMessages() {
+  addMessage() {
     const message = this.state.messages[0];
     this.referenceChatMessages.add({
-      _id: message.id,
-      text: message.text || "",
+      uid: this.state.uid,
+      _id: message._id,
+      text: message.text,
       createdAt: message.createdAt,
-      user: this.state.user,
+      user: this.state.user
     });
   }
 
   // function to display messages in chat
   onSend(messages = []) {
-    this.setState(previousState => ({
+    this.setState((previousState) => ({
       messages: GiftedChat.append(previousState.messages, messages),
-    })), () => {
-      this.addMessages()
-    }
+    }), () => {
+      this.addMessage()
+    });
+  }
+
+  componentWillUnmount() {
+    this.authUnsubscribe();
+    this.unsubscribe();
   }
 
   // chat bubble
@@ -107,10 +132,6 @@ export default class Chat extends React.Component {
         }}
       />
     )
-  }
-
-  componentWillUnmount() {
-    this.authUnsubscribe();
   }
 
   render() {
