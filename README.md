@@ -11,6 +11,19 @@ before joining the chat.
 and location data.
 - Data gets stored online and offline.
 
+# User stories
+
+- As a new user, I want to be able to easily enter a chat room so I can quickly start talking to my
+friends and family.
+- As a user, I want to be able to send messages to my friends and family members to exchange
+the latest news.
+- As a user, I want to send images to my friends to show them what I’m currently doing.
+- As a user, I want to share my location with my friends to show them where I am.
+- As a user, I want to be able to read my messages offline so I can reread conversations at any
+time.
+- As a user with a visual impairment, I want to use a chat app that is compatible with a screen
+reader so that I can engage with a chat interface.
+
 # Set up
 
 - Clone the repo
@@ -46,3 +59,13 @@ and location data.
 ```
 - Navigate to project folder in terminal and run ```npm start```
 - Launch the project using an Android Studio or iOS equivalent, or install Expo App on your mobile device and scan the QR code in the terminal
+
+# Screenshots
+
+## Welcome screen:
+
+![Screenshot](./img/Chat-1.png)
+
+## Chat:
+
+![Screenshot](./img/Chat-2.png)
